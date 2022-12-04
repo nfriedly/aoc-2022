@@ -1,20 +1,20 @@
 
 
 struct CaloriesList<> {
-    elves: Vec<Vec<usize>>,
+    elves: Vec<usize>,
 }
 
 impl CaloriesList {
      fn parse(input: &str) -> CaloriesList {
-        let mut elves: Vec<Vec<usize>> = Vec::new();
-        let mut elf: Vec<usize> = Vec::new();
+        let mut elves: Vec<usize> = Vec::new();
+        let mut elf: usize = 0;
         for line in input.lines() {
             if line.is_empty() {
                 elves.push(elf);
-                elf = Vec::new();
+                elf = 0;
             } else {
                 let num: usize = line.trim().parse().expect("expecting a number or an empty line");
-                elf.push(num);
+                elf += num;
             }
         }
         elves.push(elf);
@@ -26,21 +26,31 @@ impl CaloriesList {
     fn find_biggest_group_total(&self) -> usize {
         let mut biggest: usize = 0;
         for elf in self.elves.iter() {
-            let mut cur_size: usize = 0;
-            for item in elf.iter() {
-                cur_size += item;
-            }
-            if cur_size > biggest {
-                biggest = cur_size;
+            if elf > &biggest {
+                biggest = elf.clone();
             }
         }
         biggest
+    }
+
+    fn find_top_three(&self) -> usize {
+        let mut sorted = self.elves.clone();
+        sorted.sort();
+        let third_place = sorted.len() - 3;
+        let top_three = &sorted[third_place..];
+        println!("top 3: {}, {}, {}", top_three[0], top_three[1], top_three[2]);
+
+        let mut total: usize = 0;
+        for elf in top_three.iter() {
+            total += elf;
+        }
+        total
     }
 }
 
 fn main() {
     let input = include_str!("input.txt");
     let calories_list: CaloriesList = CaloriesList::parse(&input);
-    let biggest: usize = calories_list.find_biggest_group_total();
-    println!("{}", biggest);
+    let top_three: usize = calories_list.find_top_three();
+    println!("{}", top_three);
 }
