@@ -19,9 +19,9 @@ fn main() {
         .map(|l| l.trim())
         .map(|l| parse_line(l))
         .filter(|(left, right)| {
-            (left.contains(right.start()) && left.contains(right.end()))
-                || (right.contains(left.start()) && right.contains(left.end()))
+            (left.contains(right.start()) || left.contains(right.end()))
+                || (right.contains(left.start()) || right.contains(left.end()))
         })
         .count();
-    println!("contained pars: {} ", ranges);
+    println!("overlapping pars: {} ", ranges);
 }
