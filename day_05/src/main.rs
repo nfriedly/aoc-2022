@@ -50,10 +50,9 @@ fn parse_instructions(input: &str) -> Vec<Move> {
 
 fn do_moves(mut stacks: Stacks, moves: Vec<Move>) -> Stacks {
     for instruction in moves {
-        for _ in 0..instruction.num {
-            let thing = stacks.get_mut(&instruction.src).unwrap().pop().unwrap();
-            stacks.get_mut(&instruction.dest).unwrap().push(thing);
-        }
+        let mut src = stacks.get_mut(&instruction.src).unwrap();
+        let mut things = src.split_off(src.len() - instruction.num);
+        stacks.get_mut(&instruction.dest).unwrap().append(&mut things);
         println!("\nmove:{:?}\n stacks now: {:?}\n", instruction, stacks);
     }
     stacks
@@ -79,5 +78,5 @@ fn main() {
     );
     stacks = do_moves(stacks, instructions);
     println!("after moves:\n{:?}", stacks);
-    println!("top letters: {:?}", get_tops(&stacks));
+    println!("top letters: {:?}", get_tops(&stacks)); // todo: figure out why join doesn't work here
 }
