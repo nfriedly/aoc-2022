@@ -37,9 +37,29 @@ fn get_dir_sizes_cumlative(input: &str) -> HashMap<String, usize> {
     dirs
 }
 
-fn sum_dirs_under_100k(dirs: HashMap<String, usize>) -> usize {
+fn sum_dirs_under_100k(dirs: &HashMap<String, usize>) -> usize {
     let max: usize = 100000;
     dirs.values().filter(|&&size| size < max).sum()
+}
+
+fn get_needed_space(dirs: &HashMap<String, usize>) -> usize {
+    let disk_size: usize = 70000000;
+    let update_size: usize = 30000000;
+    let used_space = dirs.get("/").expect("needs a / dir");
+    let unused_space = disk_size - used_space;
+    let needed_space = update_size - unused_space;
+    needed_space
+}
+
+fn find_size_to_delete(dirs: &HashMap<String, usize>) -> usize {
+    let needed_space = get_needed_space(&dirs);
+    dirs.values().fold(usize::MAX, |accum, item| {
+        if item > &needed_space && item < &accum {
+            *item
+        } else {
+            accum
+        }
+    })
 }
 
 fn main() {
@@ -48,38 +68,42 @@ fn main() {
     let dir_sizes = get_dir_sizes_cumlative(input);
     println!(
         "total size of directories under 100k: {:?}",
-        sum_dirs_under_100k(dir_sizes)
+        sum_dirs_under_100k(&dir_sizes)
     );
+    println!("size of dir to delete: {}", find_size_to_delete(&dir_sizes))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_parse() {
-        let input = include_str!("input-sample.txt");
-
-        let dir_sizes = get_dir_sizes_cumlative(input);
-        assert_eq!(
-            dir_sizes,
-            HashMap::from([
-                ("/".to_string(), 48381165),
-                ("//a".to_string(), 94853),
-                ("//d".to_string(), 24933642),
-                ("//a/e".to_string(), 584)
-            ])
-        );
-    }
-
-    #[test]
-    fn test_sizes() {
-        let dirs: HashMap<String, usize> = HashMap::from([
+    fn get_sample_dirs() -> HashMap<String, usize> {
+        HashMap::from([
             ("/".to_string(), 48381165),
             ("//a".to_string(), 94853),
             ("//d".to_string(), 24933642),
             ("//a/e".to_string(), 584),
-        ]);
-        assert_eq!(sum_dirs_under_100k(dirs), 95437);
+        ])
+    }
+
+    #[test]
+    fn test_parse() {
+        let input = include_str!("input-sample.txt");
+        assert_eq!(get_dir_sizes_cumlative(input), get_sample_dirs());
+    }
+
+    #[test]
+    fn test_sizes() {
+        assert_eq!(sum_dirs_under_100k(&get_sample_dirs()), 95437);
+    }
+
+    #[test]
+    fn test_needed_space() {
+        assert_eq!(get_needed_space(&get_sample_dirs()), 8381165);
+    }
+
+    #[test]
+    fn test_find_size_to_delete() {
+        assert_eq!(find_size_to_delete(&get_sample_dirs()), 24933642);
     }
 }
