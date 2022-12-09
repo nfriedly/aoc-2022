@@ -1,36 +1,67 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 type Directory = HashMap<String, Entity>;
 
+#[derive(Debug)]
 enum Entity {
     File(usize),
     Dir(Directory),
 }
-use Entity::*;
-
-fn get_directory(tree: Directory, path: Vec<&str>) -> Directory {
+fn get_directory<'a>(tree: &'a Directory, path: &Vec<&'a str>) -> &'a Directory {
     tree
+}
+
+fn parse(input: &str) -> Option<Directory> {
+    let mut root: Directory = HashMap::new();
+    let mut dir = &mut root;
+    let mut path: Vec<&str> = Vec::new();
+    for line in input.lines() {
+        println!("parsing '{}'", line);
+        use Entity::*;
+        let words: Vec<&str> = line.split_whitespace().collect();
+        if line.starts_with("$ cd") {
+            let dirname = line.split_at(5).1;
+            if dirname == "/" {
+                path = Vec::new();
+                dir = &mut root;
+            } else if dirname == ".." {
+                path.pop();
+                dir = match dir.get_mut("..")? {
+                    Dir(dir) => dir,
+                    _ => &mut root,
+                }
+            } else {
+                path.push(dirname);
+                dir = match dir.get_mut("..")? {
+                    Dir(dir) => dir,
+                    _ => panic!("dir {} (/{}) not found", dirname, path.join("/")),
+                }
+            }
+            println!("path: /{}", path.join("/"));
+        } else if line.starts_with("$ ls") {
+            // do nothing
+            // dir = get_directory(&root, &path);
+        } else if line.starts_with("dir ") {
+            let name = line.split_at(4).1;
+            let new_dir: Directory = HashMap::from([("..".to_string(), Dir(dir))]);
+            dir.insert(name.to_string(), Dir(new_dir));
+        } else {
+            if let Ok(size) = words.get(0)?.parse() {
+                dir.insert(words.get(1)?.to_string(), File(size));
+            } else {
+                println!("error parsing size");
+                return None;
+            }
+        }
+    }
+    Some(root)
 }
 
 fn main() {
     let input = include_str!("input.txt");
-    
-    let mut cur_dir: Directory = HashMap::new();
-    let mut tree = Dir(cur_dir);
-    let mut cur_path: Vec<&str> = Vec::new();
-    for line in input.lines() {
-        if line.starts_with("$ cd") {
-            let dirname = line.split_at(5).1;
-            if dirname == "/" {
-                cur_path = Vec::new();
-            } else if dirname == ".." {
-                cur_path.pop();
-            } else {
-                cur_path.push(dirname);
-            }
-            println!("path: /{}", cur_path.join("/"));
-        }
-    }
+
+    let root = parse(input);
+    println!("parsed: {:?}", root);
 }
 
 #[cfg(test)]
