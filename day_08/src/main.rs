@@ -1,5 +1,6 @@
 type Forrest = Vec<Vec<u8>>;
 type VisibilityMap = Vec<Vec<bool>>;
+type ScenicMap = Vec<Vec<usize>>;
 
 enum Side {
     Top,
@@ -69,7 +70,7 @@ fn calculate_visibility_pass(forrest: &Forrest, side: Side) -> VisibilityMap {
     result
 }
 
-fn get_visibility(forrest: Forrest) -> VisibilityMap {
+fn get_visibility(forrest: &Forrest) -> VisibilityMap {
     let vis_left = calculate_visibility_pass(&forrest, Left);
     // println!("vis left {:?}", vis_left);
     let vis_right = calculate_visibility_pass(&forrest, Right);
@@ -112,26 +113,89 @@ fn combine_visibility(a_map: VisibilityMap, b_map: VisibilityMap) -> VisibilityM
         .collect()
 }
 
-fn pretty_print_map(map: &VisibilityMap) {
-    for row in map.into_iter() {
-        for vis in row.into_iter() {
-            if *vis {
-                print!("1")
-            } else {
-                print!("0")
-            }
-        }
-        println!("");
-    }
+fn senic_scores(forrest: &Forrest) -> ScenicMap {
+    let forrest_height = forrest.len();
+    let forrest_width = forrest.get(0).expect("there must be at leastone row").len();
+    // there's definately room for some optimization in here
+    forrest
+        .into_iter()
+        .enumerate()
+        .map(|(y, row)| {
+            row.into_iter()
+                .enumerate()
+                .map(|(x, height)| {
+                    let mut left = 0;
+                    for x2 in (0..x).rev() {
+                        assert_ne!(x, x2);
+                        left = left + 1;
+                        let side_tree_height = forrest[y][x2];
+                        if side_tree_height >= *height {
+                            break;
+                        }
+                    }
+                    let mut right = 0;
+                    for x2 in (x + 1)..forrest_width {
+                        assert_ne!(x, x2);
+                        right = right + 1;
+                        let side_tree_height = forrest[y][x2];
+                        if side_tree_height >= *height {
+                            break;
+                        }
+                    }
+
+                    let mut top = 0;
+                    for y2 in (0..y).rev() {
+                        assert_ne!(y, y2);
+                        top = top + 1;
+                        let side_tree_height = forrest[y2][x];
+                        if side_tree_height >= *height {
+                            break;
+                        }
+                    }
+
+                    let mut bottom = 0;
+                    for y2 in (y + 1)..forrest_height {
+                        assert_ne!(y, y2);
+                        bottom = bottom + 1;
+                        let side_tree_height = forrest[y2][x];
+                        if side_tree_height >= *height {
+                            break;
+                        }
+                    }
+                    // println!(
+                    //     "scpore for ({}, {}) with height {} is {}*{}*{}*{}={}",
+                    //     x,
+                    //     y,
+                    //     height,
+                    //     top,
+                    //     left,
+                    //     right,
+                    //     bottom,
+                    //     top * bottom * left * right
+                    // );
+                    top * bottom * left * right
+                })
+                .collect()
+        })
+        .collect()
 }
 
+fn most_scenic(map: ScenicMap) -> usize {
+    map.into_iter()
+        .map(|row| row.into_iter().max().unwrap())
+        .max()
+        .unwrap()
+}
 fn main() {
     let input = include_str!("input.txt");
     let forrest = parse(input);
     //println!("parsed: {:?}", parse(input));
-    let vis = get_visibility(forrest);
-    pretty_print_map(&vis);
+    let vis = get_visibility(&forrest);
     println!("num visible: {}", count_visible(vis));
+
+    let scores = senic_scores(&forrest);
+    //println!("scenic scores: {:?}", scores);
+    println!("best scenic score: {}", most_scenic(scores));
 }
 
 #[cfg(test)]
@@ -242,7 +306,15 @@ mod tests {
     fn test_sample_input_count() {
         let input = include_str!("input-sample.txt");
         let forrest = parse(input);
-        let vis = get_visibility(forrest);
+        let vis = get_visibility(&forrest);
         assert_eq!(count_visible(vis), 21);
+    }
+
+    #[test]
+    fn test_sample_input_most_scenic() {
+        let input = include_str!("input-sample.txt");
+        let forrest = parse(input);
+        let scores = senic_scores(&forrest);
+        assert_eq!(most_scenic(scores), 8);
     }
 }
