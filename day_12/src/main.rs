@@ -107,7 +107,7 @@ fn reachable_neighbors(current: &Point, map: &Vec<Vec<u8>>) -> Vec<Point> {
         // finally, filter out any that are too high or too low
         .filter(|n| {
             let n_height = map[n.y as usize][n.x as usize];
-            cur_height.abs_diff(n_height) <= 1
+            cur_height + 1 >= n_height
         })
         .collect::<Vec<Point>>()
 }
