@@ -112,10 +112,14 @@ fn reachable_neighbors(current: &Point, map: &Vec<Vec<u8>>) -> Vec<Point> {
         .collect::<Vec<Point>>()
 }
 
-// A* finds a path from start to goal.
-// h is the heuristic function. h(n) estimates the cost to reach goal from node n.
 fn find_path(maze: &Maze) -> Option<Path> {
     let start = maze.start;
+    find_path_from(start, maze)
+}
+
+// A* finds a path from start to goal.
+// h is the heuristic function. h(n) estimates the cost to reach goal from node n.
+fn find_path_from(start: Point, maze: &Maze) -> Option<Path> {
     let goal = maze.end;
     let map = &maze.map;
     // The set of discovered nodes that may need to be (re-)expanded.
@@ -190,6 +194,8 @@ fn draw(path: Path, maze: &Maze) {
                 .map(|(x, _)| {
                     if x == maze.end.x as usize && y == maze.end.y as usize {
                         'E'
+                    } else if maze.map[y as usize][x as usize] == 1 {
+                        'a'
                     } else {
                         '.'
                     }
@@ -221,12 +227,17 @@ fn draw(path: Path, maze: &Maze) {
     }
 }
 
+fn part2(maze: &Maze) -> usize {
+    (0..maze.map.len()).map(|y| find_path_from(Point{x: 0, y: y as u8}, maze).unwrap().len()).min().unwrap() -1
+}
+
 fn main() {
     let input = include_str!("input.txt");
     let maze = parse(input);
     let path = find_path(&maze).unwrap();
     println!("steps in shortest path: {}", path.len() - 1);
     draw(path, &maze);
+    println!("part 2: {}", part2(&maze));
 }
 
 #[cfg(test)]
